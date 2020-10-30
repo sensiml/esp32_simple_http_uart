@@ -50,3 +50,12 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+#Esp-IDF files
+build/
+sdkconfig
+sdkconfig.old
+
+#VS code files
+.vscode/settings.json
+.vscode/c_cpp_properties.json
