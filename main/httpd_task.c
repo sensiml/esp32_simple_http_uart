@@ -60,7 +60,8 @@ static CgiStatus ICACHE_FLASH_ATTR config_get_handler(HttpdConnData* connData)
         httpdStartResponse(connData, 200);
         httpdHeader(connData, "Content-Type", "text/plain");
         httpdEndHeaders(connData);
-        const char* resp_str = "Config not yet received from device, or device is in recognition mode.";
+        const char* resp_str
+            = "Config not yet received from device, or device is in recognition mode.";
         httpdSend(connData, resp_str, strlen(resp_str));
     }
 
@@ -69,10 +70,11 @@ static CgiStatus ICACHE_FLASH_ATTR config_get_handler(HttpdConnData* connData)
 
 static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
 {
-    uint8_t* pData = connData->cgiData;
+    uint8_t* pData   = connData->cgiData;
+    int      rxBytes = 0;
     if (connData->isConnectionClosed)
     {
-        if(pData != NULL)
+        if (pData != NULL)
         {
             free(pData);
         }
@@ -82,11 +84,11 @@ static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
     }
     else
     {
-        if(pData == NULL)
+        if (pData == NULL)
         {
             pData = (uint8_t*) malloc(RX_BUF_SIZE + 1);
 
-            if(pData == NULL)
+            if (pData == NULL)
             {
                 ESP_LOGE(TAG, "Cant malloc for sensordata");
                 return HTTPD_CGI_DONE;
@@ -102,16 +104,16 @@ static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
         }
         else
         {
-            const int rxBytes
-                = uart_read_bytes(DEVICE_DATA_UART_NUM, pData, RX_BUF_SIZE, 100 / portTICK_RATE_MS);
+            rxBytes
+                = uart_read_bytes(DEVICE_DATA_UART_NUM, pData, RX_BUF_SIZE/2, 1000 / portTICK_RATE_MS);
             if (rxBytes > 0)
             {
                 ESP_LOGI(TAG, "Got %d bytes", rxBytes);
-                cJSON* results = cJSON_Parse((char*)pData);
-                if(results != NULL)
+                cJSON* results = cJSON_Parse((char*) pData);
+                if (results != NULL)
                 {
-                const char* resp_str = (const char*) cJSON_Print(results);
-                httpdSend(connData, resp_str, strlen(resp_str));
+                    const char* resp_str = (const char*) cJSON_Print(results);
+                    httpdSend(connData, resp_str, strlen(resp_str));
                 }
                 else
                 {
@@ -119,9 +121,9 @@ static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
                 }
             }
             else
-                {
-                    ESP_LOGW(TAG, "No bytes RX");
-                }
+            {
+                ESP_LOGW(TAG, "No bytes RX");
+            }
         }
         return HTTPD_CGI_MORE;
     }
@@ -157,7 +159,7 @@ static CgiStatus stream_get_handler(HttpdConnData* connData)
             // Allocate a state structure.
             pSensorData = malloc(queue_sz);
             ESP_LOGI(TAG, "Malloc %d", queue_sz);
-            if(pSensorData== NULL)
+            if (pSensorData == NULL)
             {
                 ESP_LOGE(TAG, "Cant malloc for sensordata");
                 return HTTPD_CGI_DONE;

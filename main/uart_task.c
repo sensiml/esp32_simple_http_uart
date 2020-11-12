@@ -2,6 +2,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
+#include "esp_vfs_dev.h"
 #include "driver/uart.h"
 #include "string.h"
 #include "driver/gpio.h"
@@ -11,14 +12,12 @@
 
 static int    data_queue_item_sz = 0;
 static cJSON* config_json;
-static cJSON* results_json;
 static bool   config_rx = false;
 
 bool results_ready = false;
 int get_data_queue_size() { return data_queue_item_sz; }
 
 cJSON* get_config_json() { return config_json; }
-cJSON* get_results_json() { return results_json; }
 
 void uart_init(void)
 {
@@ -46,6 +45,7 @@ void uart_init(void)
                  RXD_HW_UART_PIN,
                  UART_PIN_NO_CHANGE,
                  UART_PIN_NO_CHANGE);
+    esp_vfs_dev_uart_use_driver(DEVICE_DATA_UART_NUM);
 
     uart_driver_install(USB_SERIAL_UART_NUM, RX_BUF_SIZE, 0, 0, NULL, 0);
     uart_param_config(USB_SERIAL_UART_NUM, &uart_config_usb);
@@ -78,7 +78,6 @@ void uart_task_rx(void* arg)
                 config_json   = cJSON_Parse((char*) data);
                 if (config_json != NULL)
                 {
-                    results_json = NULL;
                     cJSON* samples_per_packet
                         = cJSON_GetObjectItemCaseSensitive(config_json, "samples_per_packet");
                     cJSON* column_location
@@ -101,15 +100,20 @@ void uart_task_rx(void* arg)
                         config_rx = true;
                         free(data);
                         uart_flush_input(DEVICE_DATA_UART_NUM);
+                        vTaskDelete(NULL);
 
                     }
                     else{
                         ESP_LOGW(RX_TASK_TAG, "Getting non-config JSON data");
                         const char* resp_str = (const char*) cJSON_Print(config_json);
                         ESP_LOGI(RX_TASK_TAG, "%s", resp_str);
+                        free(data);
+                        free(config_json);
+
+                        vTaskDelete(NULL);
                     }
                     //We are getting JSON data, but it is not the configuration. The device is in recognition mode.
-                    vTaskDelete(NULL);
+
                 }
             }
         }
