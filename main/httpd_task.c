@@ -17,6 +17,8 @@
 #include "esp_log.h"
 #include "esp_event.h"
 #include "esp_netif.h"
+
+#include "cJSON.h"
 #include "httpd_task.h"
 #include "uart_task.h"
 
@@ -25,13 +27,14 @@
 char                               my_hostname[16] = "esphttpstream";
 static CgiStatus ICACHE_FLASH_ATTR config_get_handler(HttpdConnData* connData);
 static CgiStatus ICACHE_FLASH_ATTR stream_get_handler(HttpdConnData* connData);
+static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData);
 static char                        connectionMemory[sizeof(RtosConnType) * MAX_CONNECTIONS];
 static HttpdFreertosInstance       httpdFreertosInstance;
-static bool                        streamConnected = false;
 
 HttpdBuiltInUrl builtInUrls[] = {
     ROUTE_CGI("/config", config_get_handler),
     ROUTE_CGI("/stream", stream_get_handler),
+    ROUTE_CGI("/results", results_get_handler),
     ROUTE_END(),
 };
 
@@ -57,9 +60,72 @@ static CgiStatus ICACHE_FLASH_ATTR config_get_handler(HttpdConnData* connData)
         httpdStartResponse(connData, 200);
         httpdHeader(connData, "Content-Type", "text/plain");
         httpdEndHeaders(connData);
-        const char* resp_str = "Config not yet received from device.";
+        const char* resp_str = "Config not yet received from device, or device is in recognition mode.";
         httpdSend(connData, resp_str, strlen(resp_str));
     }
+
+    return HTTPD_CGI_DONE;
+}
+
+static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
+{
+    uint8_t* pData = connData->cgiData;
+    if (connData->isConnectionClosed)
+    {
+        if(pData != NULL)
+        {
+            free(pData);
+        }
+        ESP_LOGI(TAG, "Result Stream Closed");
+        // Connection aborted. Clean up.
+        return HTTPD_CGI_DONE;
+    }
+    else
+    {
+        if(pData == NULL)
+        {
+            pData = (uint8_t*) malloc(RX_BUF_SIZE + 1);
+
+            if(pData == NULL)
+            {
+                ESP_LOGE(TAG, "Cant malloc for sensordata");
+                return HTTPD_CGI_DONE;
+            }
+
+            connData->cgiData = pData;
+            // Set initial pointer to start of string
+            // We need to send the headers before sending any data. Do that now.
+            httpdStartResponse(connData, 200);
+            httpdHeader(connData, "Content-Type", "text/json");
+            httpdEndHeaders(connData);
+            uart_flush_input(DEVICE_DATA_UART_NUM);
+        }
+        else
+        {
+            const int rxBytes
+                = uart_read_bytes(DEVICE_DATA_UART_NUM, pData, RX_BUF_SIZE, 100 / portTICK_RATE_MS);
+            if (rxBytes > 0)
+            {
+                ESP_LOGI(TAG, "Got %d bytes", rxBytes);
+                cJSON* results = cJSON_Parse((char*)pData);
+                if(results != NULL)
+                {
+                const char* resp_str = (const char*) cJSON_Print(results);
+                httpdSend(connData, resp_str, strlen(resp_str));
+                }
+                else
+                {
+                    ESP_LOGW(TAG, "json did not parse");
+                }
+            }
+            else
+                {
+                    ESP_LOGW(TAG, "No bytes RX");
+                }
+        }
+        return HTTPD_CGI_MORE;
+    }
+
 
     return HTTPD_CGI_DONE;
 }
@@ -78,7 +144,6 @@ static CgiStatus stream_get_handler(HttpdConnData* connData)
             // free(pSensorData->data);
             free(pSensorData);
         }
-        streamConnected = false;
         ESP_LOGI(TAG, "Stream closed");
         return HTTPD_CGI_DONE;
     }
@@ -106,7 +171,6 @@ static CgiStatus stream_get_handler(HttpdConnData* connData)
             httpdStartResponse(connData, 200);
             httpdHeader(connData, "Content-Type", "application/octet-stream");
             httpdEndHeaders(connData);
-            streamConnected = true;
             uart_flush_input(DEVICE_DATA_UART_NUM);
         }
         else
@@ -118,28 +182,13 @@ static CgiStatus stream_get_handler(HttpdConnData* connData)
                 httpdSend(connData, (const char*) pSensorData, queue_sz);
             }
         }
-        // mkae array of many messages with id and pointer.
-        // if(xQueuePeek(uart_data_queue, pSensorData, 1/portTICK_RATE_MS) != pdPASS)
-        // {
-        //     vTaskDelay(1/portTICK_RATE_MS);
-        // }
-        // BaseType_t q_resp = xQueueReceive(uart_data_queue, pSensorData, 100/portTICK_RATE_MS);
-        // if (q_resp == pdPASS)
-        // {
-        //     httpdSend(connData, (const char*) pSensorData->data, queue_sz);
-        // }
-        // else
-        // {
-        //     ESP_LOGE(TAG, "Couldn't read queue %d", q_resp);
-        // }
+
         return HTTPD_CGI_MORE;
     }
 
 
     return HTTPD_CGI_DONE;
 }
-
-bool httpd_task_is_stream_open() { return streamConnected; }
 
 void httpd_task_init()
 {

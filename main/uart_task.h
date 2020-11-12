@@ -6,7 +6,7 @@
 
 #define CONNECT_STR "connect"
 #define RX_TASK_TAG "RX_TASK"
-#define RX_BUF_SIZE 2048
+#define RX_BUF_SIZE 1024
 
 #define TXD_HW_UART_PIN (GPIO_NUM_17)
 #define RXD_HW_UART_PIN (GPIO_NUM_16)
@@ -18,12 +18,13 @@
 
 #define MAX_SENSOR_DATA_MSG 50
 
-
+extern bool results_ready;
 
 void   uart_task_rx(void* arg);
 void   uart_init(void);
 int    get_data_queue_size();
 cJSON* get_config_json();
+cJSON* get_results_json();
 
 
 #endif  //__UART_TASK_H__
