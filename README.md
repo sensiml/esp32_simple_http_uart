@@ -18,6 +18,11 @@ Run the ESP-IDF menuconfig tool: `idf.py menuconfig`, and configure the `Example
 
 It is useful to have the UART ISR configured to be placed in RAM, but it is not necessary. This is done through the menuconfig.
 
+## Recognition results
+
+The application will assume that if it gets valid JSON over a serial port, and it isn't a capture configuration, that it is getting recognition results.
+
+These results will be viewable at the `/results` endpoint. `/config` and `/stream` endpoints won't work when streaming results.
 
 # Using with Nano33 or other devices.
 

@@ -2,6 +2,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
+#include "esp_vfs_dev.h"
 #include "driver/uart.h"
 #include "string.h"
 #include "driver/gpio.h"
@@ -13,6 +14,7 @@ static int    data_queue_item_sz = 0;
 static cJSON* config_json;
 static bool   config_rx = false;
 
+bool results_ready = false;
 int get_data_queue_size() { return data_queue_item_sz; }
 
 cJSON* get_config_json() { return config_json; }
@@ -43,6 +45,7 @@ void uart_init(void)
                  RXD_HW_UART_PIN,
                  UART_PIN_NO_CHANGE,
                  UART_PIN_NO_CHANGE);
+    esp_vfs_dev_uart_use_driver(DEVICE_DATA_UART_NUM);
 
     uart_driver_install(USB_SERIAL_UART_NUM, RX_BUF_SIZE, 0, 0, NULL, 0);
     uart_param_config(USB_SERIAL_UART_NUM, &uart_config_usb);
@@ -79,57 +82,40 @@ void uart_task_rx(void* arg)
                         = cJSON_GetObjectItemCaseSensitive(config_json, "samples_per_packet");
                     cJSON* column_location
                         = cJSON_GetObjectItemCaseSensitive(config_json, "column_location");
-                    if (cJSON_IsNumber(samples_per_packet))
+                    if(samples_per_packet != NULL && column_location != NULL)
                     {
-                        samples_in_packet  = samples_per_packet->valueint;
-                        num_cols           = cJSON_GetArraySize(column_location);
-                        data_queue_item_sz = samples_in_packet * sizeof(int16_t) * num_cols;
-                        ESP_LOGI(RX_TASK_TAG,
-                                 "Samples in packet %d cols %d queue_sz %d",
-                                 samples_in_packet,
-                                 num_cols,
-                                 data_queue_item_sz);
-                        // for (int i = 0; i < MAX_SENSOR_DATA_MSG; i++)
-                        // {
-                        //     dataMessages[i].index = i;
-                        //     dataMessages[i].data  = malloc(data_queue_item_sz);
-                        // }
-                        // uart_data_queue
-                        //     = xQueueCreate(MAX_SENSOR_DATA_MSG, sizeof(struct sensorDataMessage));
-                        // if (uart_data_queue == NULL)
-                        // {
-                        //     ESP_LOGE(RX_TASK_TAG, "Couldn't create data queue!");
-                        // }
+                        if (cJSON_IsNumber(samples_per_packet))
+                        {
+                            samples_in_packet  = samples_per_packet->valueint;
+                            num_cols           = cJSON_GetArraySize(column_location);
+                            data_queue_item_sz = samples_in_packet * sizeof(int16_t) * num_cols;
+                            ESP_LOGI(RX_TASK_TAG,
+                                    "Samples in packet %d cols %d queue_sz %d",
+                                    samples_in_packet,
+                                    num_cols,
+                                    data_queue_item_sz);
+                        }
+                        uart_tx_chars(DEVICE_DATA_UART_NUM, CONNECT_STR, strlen(CONNECT_STR));
+                        uart_wait_tx_done(DEVICE_DATA_UART_NUM, 1000 / portTICK_RATE_MS);
+                        config_rx = true;
+                        free(data);
+                        uart_flush_input(DEVICE_DATA_UART_NUM);
+                        vTaskDelete(NULL);
+
                     }
-                    uart_tx_chars(DEVICE_DATA_UART_NUM, CONNECT_STR, strlen(CONNECT_STR));
-                    uart_wait_tx_done(DEVICE_DATA_UART_NUM, 1000 / portTICK_RATE_MS);
-                    config_rx = true;
-                    free(data);
-                    uart_flush_input(DEVICE_DATA_UART_NUM);
-                    vTaskDelete(NULL);
+                    else{
+                        ESP_LOGW(RX_TASK_TAG, "Getting non-config JSON data");
+                        const char* resp_str = (const char*) cJSON_Print(config_json);
+                        ESP_LOGI(RX_TASK_TAG, "%s", resp_str);
+                        free(data);
+                        free(config_json);
+
+                        vTaskDelete(NULL);
+                    }
+                    //We are getting JSON data, but it is not the configuration. The device is in recognition mode.
+
                 }
             }
         }
-        // else
-        // {
-        //     // BaseType_t q_resp;
-        //     // const int rxBytes = uart_read_bytes(DEVICE_DATA_UART_NUM,
-        //     //                                     dataMessages[num_stored_packets].data,
-        //     //                                     data_queue_item_sz,
-        //     //                                     10 / portTICK_RATE_MS);
-        //     // if (rxBytes > 0 && httpd_task_is_stream_open())
-        //     // {
-        //     //     xQueueSend(
-        //     //         uart_data_queue, &dataMessages[num_stored_packets], 100 / portTICK_RATE_MS);b
-        //     //     {
-        //     //         num_stored_packets++;
-        //     //     }
-        //     //     if (num_stored_packets == MAX_SENSOR_DATA_MSG)
-        //     //     {
-        //     //         num_stored_packets = 0;
-        //     //     }
-        //         vTaskDelay(100);
-        //     // }
-        // }
     }
 }

@@ -18,7 +18,7 @@
 
 #define MAX_SENSOR_DATA_MSG 50
 
-
+extern bool results_ready;
 
 void   uart_task_rx(void* arg);
 void   uart_init(void);
