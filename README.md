@@ -14,6 +14,10 @@ To clone this repository, make sure it is cloned with the `--recursive` option. 
 
 Run the ESP-IDF menuconfig tool: `idf.py menuconfig`, and configure the `Example Connection Configuration` section with your SSID/Passphrase.
 
+## Swapping UART Pins
+
+If you are connecting two feather boards together, you will need to swap the UART RX/TX Pins. This can be done by setting `RX_TX_NEEDS_SWAP` in `uart_task.h` to 1.
+
 ## Other Tips
 
 It is useful to have the UART ISR configured to be placed in RAM, but it is not necessary. This is done through the menuconfig.
