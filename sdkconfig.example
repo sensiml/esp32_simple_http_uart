@@ -119,6 +119,17 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
+# Application UART Configuration
+#
+CONFIG_DEVICE_DATA_UART_PIN_SWAP=y
+# CONFIG_BAUD_115200 is not set
+# CONFIG_BAUD_230400 is not set
+CONFIG_BAUD_460800=y
+# CONFIG_BAUD_921600 is not set
+CONFIG_DATA_UART_SPEED=460800
+# end of Application UART Configuration
+
+#
 # Example Connection Configuration
 #
 CONFIG_EXAMPLE_CONNECT_WIFI=y
