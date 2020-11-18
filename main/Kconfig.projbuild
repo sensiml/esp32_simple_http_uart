@@ -1,0 +1,31 @@
+menu "Application UART Configuration"
+    config DEVICE_DATA_UART_PIN_SWAP
+    bool "Data UART Swap RX/TX"
+    default n
+    help
+        If you are connecting two Feather devices, or need to swap device
+        data uart pins, enable this.
+
+    choice BAUD_SET
+        prompt "Data UART Baud Rate"
+        default BAUD_460800
+        config BAUD_115200
+            bool "115200"
+        config BAUD_230400
+            bool "230400"
+        config BAUD_460800
+            bool "460800"
+        config BAUD_921600
+            bool "921600"
+
+    endchoice
+    config DATA_UART_SPEED
+        int
+        default 460800 if BAUD_460800
+        default 115200 if BAUD_115200
+        default 230400 if BAUD_230400
+        default 921600 if BAUD_921600
+
+endmenu
+
+

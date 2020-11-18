@@ -21,8 +21,8 @@ cJSON* get_config_json() { return config_json; }
 
 void uart_init(void)
 {
-    const uart_config_t uart_config_qf = {
-        .baud_rate  = 115200 *4,
+    const uart_config_t uart_config_data_source = {
+        .baud_rate  = UART_SPEED_DATA_SOURCE,
         .data_bits  = UART_DATA_8_BITS,
         .parity     = UART_PARITY_DISABLE,
         .stop_bits  = UART_STOP_BITS_1,
@@ -39,7 +39,7 @@ void uart_init(void)
     };
     // We won't use a buffer for sending data.
     uart_driver_install(DEVICE_DATA_UART_NUM, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
-    uart_param_config(DEVICE_DATA_UART_NUM, &uart_config_qf);
+    uart_param_config(DEVICE_DATA_UART_NUM, &uart_config_data_source);
     uart_set_pin(DEVICE_DATA_UART_NUM,
                  TXD_HW_UART_PIN,
                  RXD_HW_UART_PIN,
@@ -95,6 +95,8 @@ void uart_task_rx(void* arg)
                                     num_cols,
                                     data_queue_item_sz);
                         }
+                        const char* resp_str = (const char*) cJSON_PrintUnformatted(config_json);
+                        ESP_LOGI(RX_TASK_TAG, "%s", resp_str);
                         uart_tx_chars(DEVICE_DATA_UART_NUM, CONNECT_STR, strlen(CONNECT_STR));
                         uart_wait_tx_done(DEVICE_DATA_UART_NUM, 1000 / portTICK_RATE_MS);
                         config_rx = true;

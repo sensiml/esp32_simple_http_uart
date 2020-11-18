@@ -14,9 +14,33 @@ To clone this repository, make sure it is cloned with the `--recursive` option. 
 
 Run the ESP-IDF menuconfig tool: `idf.py menuconfig`, and configure the `Example Connection Configuration` section with your SSID/Passphrase.
 
-## Swapping UART Pins
+![Example Connection Configuration](images/example_connection_config.png)
 
-If you are connecting two feather boards together, you will need to swap the UART RX/TX Pins. This can be done by setting `RX_TX_NEEDS_SWAP` in `uart_task.h` to 1.
+![Example Connection SSID and Password](images/example_connection_ssid_pw.png)
+
+## UART Configuration
+
+In the ESP-IDF menuconfig tool, you will see `Application UART Configuration`
+
+![Application UART Configuration in menuconfig](images/application_uart_configuration.png)
+
+### Swapping UART Pins
+
+If you are connecting two feather boards together, you will need to swap the UART RX/TX Pins. Select `Data UART Swap RX/TX` to do this.
+
+![Application UART swap pins](images/application_uart_swap.png)
+
+### Changing Data UART Baud Rate
+
+The application defaults to `480600 bps` as a baud rate for the UART. This can be configured in the configuration.
+
+Select `Data UART Baud Rate`
+
+![Application UART rate](images/application_uart_rate.png)
+
+And choose from the list of options
+
+![Application UART rate options](images/application_uart_rate_options.png)
 
 ## Other Tips
 
