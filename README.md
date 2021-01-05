@@ -52,6 +52,17 @@ The application will assume that if it gets valid JSON over a serial port, and i
 
 These results will be viewable at the `/results` endpoint. `/config` and `/stream` endpoints won't work when streaming results.
 
+# Using with QuickFeather (and other Feather Boards)
+
+Using the [Huzzah32 Feather](https://www.adafruit.com/product/3619) with stacking headers installed, insert another feather/wing board into the headers to connect them. Shown here is the [QuickLogic QuickFeather](https://www.quicklogic.com/products/eos-s3/quickfeather-development-kit/) on top.
+
+**Note:** When using two feather boards, you will need to [Swap UART pins](#Swapping-UART-Pins) in order for communication to work properly.
+
+![QuickLogic QuickFeather stacked on top of Huzzah32](images/qf_esp32_stack.png)
+
+When using a battery, use the battery terminal of the Huzzah32 Feather.
+![QuickLogic QuickFeather stacked on top of Huzzah32](images/qf_esp32_stack_battery.png)
+
 # Using with Nano33 or other devices.
 
 SensiML's firmware for the [Arduino Nano33](https://github.com/sensiml/nano33_data_capture) is set up to communicate with this firmware using the second hardware UART on the Nano33. However, the cables aren't necessarily meant to line up. Below, an image is shown with a breadboard to illustrate the wiring needed to power the Nano33 from the ESP32 feather with a battery.
