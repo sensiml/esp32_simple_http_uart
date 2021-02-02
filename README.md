@@ -42,7 +42,7 @@ And choose from the list of options
 
 ![Application UART rate options](images/application_uart_rate_options.png)
 
-### Flashing THe Board
+### Flashing The Board
 
 ```bash
 idf.py build
