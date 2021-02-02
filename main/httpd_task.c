@@ -72,6 +72,7 @@ static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
 {
     uint8_t* pData   = connData->cgiData;
     int      rxBytes = 0;
+
     if (connData->isConnectionClosed)
     {
         if (pData != NULL)
@@ -82,6 +83,7 @@ static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
         // Connection aborted. Clean up.
         return HTTPD_CGI_DONE;
     }
+
     else
     {
         if (pData == NULL)
@@ -90,7 +92,7 @@ static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
 
             if (pData == NULL)
             {
-                ESP_LOGE(TAG, "Cant malloc for sensordata");
+                ESP_LOGE(TAG, "Cant malloc for result data");
                 return HTTPD_CGI_DONE;
             }
 
@@ -104,27 +106,33 @@ static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
         }
         else
         {
-            rxBytes
-                = uart_read_bytes(DEVICE_DATA_UART_NUM, pData, RX_BUF_SIZE/2, 1000 / portTICK_RATE_MS);
+            rxBytes = uart_read_bytes(
+                DEVICE_DATA_UART_NUM, pData, RX_BUF_SIZE / 2, 1000 / portTICK_RATE_MS);
             if (rxBytes > 0)
             {
                 ESP_LOGI(TAG, "Got %d bytes", rxBytes);
                 cJSON* results = cJSON_Parse((char*) pData);
                 if (results != NULL)
                 {
+                    ESP_LOGW(TAG, "Sending Results!");
                     const char* resp_str = (const char*) cJSON_Print(results);
                     httpdSend(connData, resp_str, strlen(resp_str));
                 }
                 else
                 {
-                    ESP_LOGW(TAG, "json did not parse");
+                    ESP_LOGW(TAG, "JSON Parse Error");
+                    const char* resp_str = "{'error':'json did not parse'}";
+                    httpdSend(connData, resp_str, strlen(resp_str));
                 }
             }
             else
             {
                 ESP_LOGW(TAG, "No bytes RX");
+                const char* resp_str = "{}";
+                httpdSend(connData, resp_str, strlen(resp_str));
             }
         }
+
         return HTTPD_CGI_MORE;
     }
 

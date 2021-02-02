@@ -42,6 +42,25 @@ And choose from the list of options
 
 ![Application UART rate options](images/application_uart_rate_options.png)
 
+### Flashing THe Board
+
+```bash
+idf.py build
+idf.py -p [PORT] flash
+```
+
+### Getting the IP Address
+
+```bash
+idf.py -p [PORT] monitor
+```
+
+Look for the static ip address (sta ip) to know where to connect
+
+```bash
+> I (3115) esp_netif_handlers: sta ip: 192.168.86.249, mask: 255.255.255.0, gw: 192.168.86.1
+```
+
 ## Other Tips
 
 It is useful to have the UART ISR configured to be placed in RAM, but it is not necessary. This is done through the menuconfig.
@@ -68,4 +87,3 @@ When using a battery, use the battery terminal of the Huzzah32 Feather.
 SensiML's firmware for the [Arduino Nano33](https://github.com/sensiml/nano33_data_capture) is set up to communicate with this firmware using the second hardware UART on the Nano33. However, the cables aren't necessarily meant to line up. Below, an image is shown with a breadboard to illustrate the wiring needed to power the Nano33 from the ESP32 feather with a battery.
 
 ![ESP32 Feather and Nano33 on a Breadboard](images/esp32_nano33_breadboard.jpg)
-
