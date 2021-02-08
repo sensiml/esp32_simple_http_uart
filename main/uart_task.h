@@ -29,6 +29,7 @@ extern bool results_ready;
 void   uart_task_rx(void* arg);
 void   uart_init(void);
 int    get_data_queue_size();
+int    get_result_queue_size();
 cJSON* get_config_json();
 
 

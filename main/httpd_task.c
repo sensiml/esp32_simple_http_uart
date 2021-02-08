@@ -86,6 +86,7 @@ static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
 
     else
     {
+        int queue_sz = get_result_queue_size();
         if (pData == NULL)
         {
             pData = (uint8_t*) malloc(RX_BUF_SIZE + 1);
@@ -107,24 +108,10 @@ static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
         else
         {
             rxBytes = uart_read_bytes(
-                DEVICE_DATA_UART_NUM, pData, RX_BUF_SIZE / 2, 1000 / portTICK_RATE_MS);
+                DEVICE_DATA_UART_NUM, pData, queue_sz / 2, 100 / portTICK_RATE_MS);
             if (rxBytes > 0)
             {
-                httpdSend(connData, pData, rxBytes);
-                // ESP_LOGI(TAG, "Got %d bytes", rxBytes);
-                // cJSON* results = cJSON_Parse((char*) pData);
-                // if (results != NULL)
-                // {
-                //     ESP_LOGW(TAG, "Sending Results!");
-                //     const char* resp_str = (const char*) cJSON_Print(results);
-                //     httpdSend(connData, resp_str, strlen(resp_str));
-                // }
-                // else
-                // {
-                //     ESP_LOGW(TAG, "JSON Parse Error");
-                //     const char* resp_str = "{'error':'json did not parse'}";
-                //     httpdSend(connData, resp_str, strlen(resp_str));
-                // }
+                httpdSend(connData, (const char*) pData, rxBytes);
             }
             else
             {
