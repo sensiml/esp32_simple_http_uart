@@ -100,7 +100,7 @@ static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
             // Set initial pointer to start of string
             // We need to send the headers before sending any data. Do that now.
             httpdStartResponse(connData, 200);
-            httpdHeader(connData, "Content-Type", "text/json");
+            httpdHeader(connData, "Content-Type", "application/octet-stream");
             httpdEndHeaders(connData);
             uart_flush_input(DEVICE_DATA_UART_NUM);
         }
@@ -110,20 +110,21 @@ static CgiStatus ICACHE_FLASH_ATTR results_get_handler(HttpdConnData* connData)
                 DEVICE_DATA_UART_NUM, pData, RX_BUF_SIZE / 2, 1000 / portTICK_RATE_MS);
             if (rxBytes > 0)
             {
-                ESP_LOGI(TAG, "Got %d bytes", rxBytes);
-                cJSON* results = cJSON_Parse((char*) pData);
-                if (results != NULL)
-                {
-                    ESP_LOGW(TAG, "Sending Results!");
-                    const char* resp_str = (const char*) cJSON_Print(results);
-                    httpdSend(connData, resp_str, strlen(resp_str));
-                }
-                else
-                {
-                    ESP_LOGW(TAG, "JSON Parse Error");
-                    const char* resp_str = "{'error':'json did not parse'}";
-                    httpdSend(connData, resp_str, strlen(resp_str));
-                }
+                httpdSend(connData, pData, rxBytes);
+                // ESP_LOGI(TAG, "Got %d bytes", rxBytes);
+                // cJSON* results = cJSON_Parse((char*) pData);
+                // if (results != NULL)
+                // {
+                //     ESP_LOGW(TAG, "Sending Results!");
+                //     const char* resp_str = (const char*) cJSON_Print(results);
+                //     httpdSend(connData, resp_str, strlen(resp_str));
+                // }
+                // else
+                // {
+                //     ESP_LOGW(TAG, "JSON Parse Error");
+                //     const char* resp_str = "{'error':'json did not parse'}";
+                //     httpdSend(connData, resp_str, strlen(resp_str));
+                // }
             }
             else
             {
