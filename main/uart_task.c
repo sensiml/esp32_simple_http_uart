@@ -10,12 +10,14 @@
 #include "uart_task.h"
 #include "httpd_task.h"
 
-static int    data_queue_item_sz = 0;
+static int    data_queue_item_sz   = 0;
+static int    result_queue_item_sz = 0;
 static cJSON* config_json;
 static bool   config_rx = false;
 
 bool results_ready = false;
-int get_data_queue_size() { return data_queue_item_sz; }
+int  get_data_queue_size() { return data_queue_item_sz; }
+int  get_result_queue_size() { return result_queue_item_sz; }
 
 cJSON* get_config_json() { return config_json; }
 
@@ -82,7 +84,7 @@ void uart_task_rx(void* arg)
                         = cJSON_GetObjectItemCaseSensitive(config_json, "samples_per_packet");
                     cJSON* column_location
                         = cJSON_GetObjectItemCaseSensitive(config_json, "column_location");
-                    if(samples_per_packet != NULL && column_location != NULL)
+                    if (samples_per_packet != NULL && column_location != NULL)
                     {
                         if (cJSON_IsNumber(samples_per_packet))
                         {
@@ -90,10 +92,10 @@ void uart_task_rx(void* arg)
                             num_cols           = cJSON_GetArraySize(column_location);
                             data_queue_item_sz = samples_in_packet * sizeof(int16_t) * num_cols;
                             ESP_LOGI(RX_TASK_TAG,
-                                    "Samples in packet %d cols %d queue_sz %d",
-                                    samples_in_packet,
-                                    num_cols,
-                                    data_queue_item_sz);
+                                     "Samples in packet %d cols %d queue_sz %d",
+                                     samples_in_packet,
+                                     num_cols,
+                                     data_queue_item_sz);
                         }
                         const char* resp_str = (const char*) cJSON_PrintUnformatted(config_json);
                         ESP_LOGI(RX_TASK_TAG, "%s", resp_str);
@@ -103,19 +105,20 @@ void uart_task_rx(void* arg)
                         free(data);
                         uart_flush_input(DEVICE_DATA_UART_NUM);
                         vTaskDelete(NULL);
-
                     }
-                    else{
+                    else
+                    {
                         ESP_LOGW(RX_TASK_TAG, "Getting non-config JSON data");
                         const char* resp_str = (const char*) cJSON_Print(config_json);
                         ESP_LOGI(RX_TASK_TAG, "%s", resp_str);
+                        result_queue_item_sz = strlen(resp_str) + 10;
                         free(data);
                         free(config_json);
 
                         vTaskDelete(NULL);
                     }
-                    //We are getting JSON data, but it is not the configuration. The device is in recognition mode.
-
+                    // We are getting JSON data, but it is not the configuration. The device is in
+                    // recognition mode.
                 }
             }
         }
