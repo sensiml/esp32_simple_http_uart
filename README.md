@@ -48,11 +48,11 @@ The application defaults to 4MB of flash. You may need to change this value depe
 
 Select `Serial Flasher Config`
 
-![Application UART rate](images/esp32_flash_size_settings.png)
+![Application Flash Size](images/esp32_flash_size_settings.png)
 
 And choose from the list of options
 
-![Application UART rate options](images/esp32_flash_size_list.png)
+![Application Flash size options](images/esp32_flash_size_list.png)
 
 ### Flashing The Board
 
