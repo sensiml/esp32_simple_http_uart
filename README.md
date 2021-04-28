@@ -42,6 +42,18 @@ And choose from the list of options
 
 ![Application UART rate options](images/application_uart_rate_options.png)
 
+### Configuring the Flash Size
+
+The application defaults to 4MB of flash. You may need to change this value depending on your boards manufacture. To do that,
+
+Select `Serial Flasher Config`
+
+![Application Flash Size](images/esp32_flash_size_settings.png)
+
+And choose from the list of options
+
+![Application Flash size options](images/esp32_flash_size_list.png)
+
 ### Flashing The Board
 
 ```bash
